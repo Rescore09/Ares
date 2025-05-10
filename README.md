@@ -76,7 +76,6 @@ This tool is provided for **educational purposes only**. Always obtain proper au
 ---
 
 <div align="center">
-  <a href="https://your-website.com">Website</a> •
-  <a href="https://discord.gg/your-server">Discord</a> •
-  <a href="https://t.me/your-telegram">Telegram</a>
+  <a href="https://rescore.lol">Website</a> •
+  <a href="https://discord.rescore.lol">Discord</a> •
 </div>
