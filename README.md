@@ -20,9 +20,9 @@
 
 ## ✨ Features
 
-- 🔐 **Discord Integration** - Seamless token management
+- 🔐 **Discord Grabber** - Seamless token stealing
 - 📊 **Information Analysis** - Comprehensive system data collection
-- 🔑 **Credential Management** - Advanced password security features
+- 🔑 **Credential Management** - Advanced password stealing features
 - 🛡️ **Password Security Module** - NEW! Added in latest update
 
 ## 🚀 Setup Instructions
