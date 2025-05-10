@@ -77,5 +77,5 @@ This tool is provided for **educational purposes only**. Always obtain proper au
 
 <div align="center">
   <a href="https://rescore.lol">Website</a> •
-  <a href="https://discord.rescore.lol">Discord</a> •
+  <a href="https://discord.rescore.lol">Discord</a> 
 </div>
