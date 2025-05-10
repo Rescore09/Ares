@@ -44,22 +44,11 @@ hk = "YOUR_WEBHOOK_HERE"
 pyinstaller --onefile main.py
 ```
 
-## 🔧 Configuration Options
-
-```python
-# config.json example
-{
-  "webhook_url": "your-webhook-url",
-  "debug_mode": false,
-  "encryption_enabled": true,
-  "log_level": "INFO"
-}
-```
 
 ## 📝 Technical Details
 - 🐍 **Primary Language**: Python 3.9+
 - 🧩 **Dependencies**: Minimal external libraries
-- 💻 **Platform Support**: Windows, macOS, Linux
+- 💻 **Platform Support**: Windows (cba to add other os supports)
 
 ## 📊 Development Progress
 - [x] Core functionality
