@@ -10,7 +10,7 @@
 </div>
 
 <p align="center">
-  <img src="https://i.imgur.com/your-logo-here.png" alt="Ares Logo" width="200" height="200" style="border-radius:50%;">
+  <img src="https://i.imgur.com/Mewaogf.png" alt="Ares Logo" width="200" height="200" style="border-radius:50%;">
 </p>
 
 ---
