@@ -63,6 +63,7 @@ pyinstaller --onefile main.py
 v1.0.0 - Initial release
 v1.0.1 - Added password security module
 v1.0.2 - Bug fixes and performance improvements
+v1.1.0 | Added MC Stealer
 ```
 
 ## ⚠️ Important Disclaimer
